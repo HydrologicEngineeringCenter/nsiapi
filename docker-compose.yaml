@@ -1,0 +1,32 @@
+version: "3.9"
+services:
+
+  nsiapi:
+    container_name: NSIAPI_DEV
+    build:
+      context: .
+      dockerfile: dev.Dockerfile
+    ports:
+      - 3031:3031
+    volumes:
+      - .:workspaces/nsiapi
+    env_file:
+      - .devcontainer/devcontainer.env
+    working_dir: /workspaces/nsi_survey_server
+    tty: true
+    entrypoint: ["bash"]
+
+  postgis:
+    image: kartoza/postgis
+    container_name: POSTGIS_DEV
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASS=notPassword
+    ports:
+      - 25432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql
+
+volumes:
+  pgdata:
+
