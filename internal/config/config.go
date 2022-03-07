@@ -1,0 +1,45 @@
+package config
+
+import (
+	"log"
+	"os"
+	"strconv"
+)
+
+type AppConfig struct {
+	Dbuser           string
+	Dbpass           string
+	Dbhost           string
+	Dbname           string
+	DbMaxConnections int
+	FeatureLimit     string
+	TempStoragePath  string
+	Port             string
+	Debug            bool
+	AwsBucket        string
+	AwsPrefix        string
+}
+
+func GetConfig() AppConfig {
+	appConfig := AppConfig{}
+	appConfig.AwsBucket = os.Getenv("AWS_BUCKET")
+	appConfig.AwsPrefix = os.Getenv("AWS_PREFIX")
+	appConfig.Dbuser = os.Getenv("DBUSER")
+	appConfig.Dbpass = os.Getenv("DBPASS")
+	appConfig.Dbhost = os.Getenv("DBHOST")
+	appConfig.Dbname = os.Getenv("DBNAME")
+	maxConnections, err := strconv.Atoi(os.Getenv("DBMAXCONNECTIONS"))
+	log.Println(maxConnections)
+	if err != nil || maxConnections == 0 {
+		maxConnections = 10
+	}
+	appConfig.DbMaxConnections = maxConnections
+	appConfig.FeatureLimit = os.Getenv("FEATURELIMIT")
+	appConfig.TempStoragePath = os.Getenv("TEMPSTORAGEPATH")
+	appConfig.Port = os.Getenv("PORT")
+	debug := os.Getenv("DEBUG")
+	if debug == "TRUE" {
+		appConfig.Debug = true
+	}
+	return appConfig
+}
