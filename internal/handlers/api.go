@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"encoding/json"
@@ -9,9 +9,9 @@ import (
 	"reflect"
 	"strings"
 
-	"di2e.net/cwbi/nsiv2-api/config"
-	. "di2e.net/cwbi/nsiv2-api/stores"
 	"github.com/google/uuid"
+	"github.com/hydrologicengineeringcenter/nsiapi/internal/config"
+	"github.com/hydrologicengineeringcenter/nsiapi/internal/stores"
 	"github.com/labstack/echo"
 
 	//"github.com/paulmach/orb"
@@ -49,9 +49,9 @@ const featureTemplate = `{"type": "Feature","geometry": {"type": "Point","coordi
 */
 
 type ApiHandler struct {
-	tempStore *TempStore
-	dataStore *DbStore
-	config    config.AppConfig
+	TempStore *stores.TempStore
+	DataStore *stores.DbStore
+	Config    config.AppConfig
 }
 
 func (api *ApiHandler) ApiHome(c echo.Context) error {
@@ -60,7 +60,7 @@ func (api *ApiHandler) ApiHome(c echo.Context) error {
 
 func (api *ApiHandler) GetStatus(c echo.Context) error {
 	id := c.Param("uuid")
-	status, err := api.tempStore.GetStatus(id)
+	status, err := api.TempStore.GetStatus(id)
 	if err != nil {
 		return err
 	} else {
@@ -75,11 +75,11 @@ func (api *ApiHandler) DownloadFileDataset(c echo.Context) error {
 	if awsSessErr != nil {
 		return awsSessErr
 	}
-	object := api.config.AwsPrefix + file
+	object := api.Config.AwsPrefix + file
 	log.Printf("Download request for %s\n", object)
 
 	result, err := s3.New(sess).GetObject(&s3.GetObjectInput{
-		Bucket: &api.config.AwsBucket,
+		Bucket: &api.Config.AwsBucket,
 		Key:    &object,
 	})
 	if err != nil {
@@ -99,8 +99,8 @@ func (api *ApiHandler) DownloadFileDataset(c echo.Context) error {
 func (api *ApiHandler) GetStructure(c echo.Context) error {
 	fdId := c.Param("structureId")
 	criteria := " where fd_id=$1"
-	nsi := Nsi{}
-	err := api.dataStore.Db.Get(&nsi, fmt.Sprintf("%s %s", NsiSelect, criteria), fdId)
+	nsi := stores.Nsi{}
+	err := api.DataStore.Db.Get(&nsi, fmt.Sprintf("%s %s", NsiSelect, criteria), fdId)
 	if err != nil {
 		return err
 	}

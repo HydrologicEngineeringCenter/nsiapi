@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"di2e.net/cwbi/nsiv2-api/config"
+	"github.com/hydrologicengineeringcenter/nsiapi/internal/config"
 	_ "github.com/jackc/pgx/stdlib"
 	"github.com/jmoiron/sqlx"
 )
@@ -13,7 +13,7 @@ const NsiSelect = `SELECT fd_id,x,y,cbfips,occtype,yrbuilt,num_story,resunits,st
 					source,empnum,teachers,students,sqft,pop2amu65,pop2amo65,pop2pmu65,
 					pop2pmo65,st_damcat,basement,bldgtype,found_ht,found_type,val_struct,
 					val_cont,val_vehic,med_yr_blt,fipsentry,firmzone,o65disable,
-					u65disable,ground_elv 
+					u65disable,ground_elv
 				   FROM nsi `
 
 type Nsi struct {
@@ -52,7 +52,7 @@ type Nsi struct {
 }
 
 const NsiStatsSelect = `select
-							count(fd_id) as num_structures, 
+							count(fd_id) as num_structures,
 							min(yrbuilt) as yrbuilt_min,
 							max(yrbuilt) as yrbuilt_max,
 							avg(num_story) as num_story_mean,
@@ -69,7 +69,7 @@ const NsiStatsSelect = `select
 							sum(val_struct) as val_struct_sum,
 							sum(val_cont) as val_cont_sum,
 							sum(val_vehic) as val_vehic_sum,
-							min(med_yr_blt) as med_yr_blt_min, 
+							min(med_yr_blt) as med_yr_blt_min,
 							max(med_yr_blt) as med_yr_blt_max,
 							max(ground_elv)as ground_elv_max,
 							min(ground_elv) as ground_elv_min
@@ -102,7 +102,7 @@ type NsiSummary struct {
 const HexbinSelect = `select
 							id,
 							st_asbinary(shape) as shape,
-							num_structures, 
+							num_structures,
 							yrbuilt_min,
 							yrbuilt_max,
 							num_story_mean,
@@ -119,7 +119,7 @@ const HexbinSelect = `select
 							val_struct_sum,
 							val_cont_sum,
 							val_vehic_sum,
-							med_yr_blt_min, 
+							med_yr_blt_min,
 							med_yr_blt_max,
 							ground_elv_max,
 							ground_elv_min

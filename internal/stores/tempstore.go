@@ -3,8 +3,8 @@ package stores
 import (
 	"fmt"
 
-	c "di2e.net/cwbi/nsiv2-api/config"
 	"github.com/boltdb/bolt"
+	c "github.com/hydrologicengineeringcenter/nsiapi/internal/config"
 	_ "github.com/jackc/pgx/stdlib"
 )
 

@@ -1,6 +1,5 @@
 version: "3.9"
 services:
-
   nsiapi:
     container_name: NSIAPI_DEV
     build:
@@ -10,8 +9,18 @@ services:
       - 3031:3031
     volumes:
       - .:/workspaces/nsiapi
-    env_file:
-      - .devcontainer/devcontainer.env
+      - ../gdal:/workspaces/gdal
+    # env_file:
+    #   - .devcontainer/devcontainer.env
+    environment:
+      - DBUSER=db_user
+      - DBPASS=password
+      - DBNAME=gis
+      - DBHOST=host.docker.internal
+      - DBSTORE=pgx
+      - DBDRIVER=postgres
+      - DBSSLMODE=false
+      - DBPORT=25432
     working_dir: /workspaces/nsiapi
     tty: true
     entrypoint: ["bash"]

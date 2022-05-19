@@ -3,8 +3,9 @@ package main
 import (
 	"log"
 
-	"di2e.net/cwbi/nsiv2-api/config"
-	"di2e.net/cwbi/nsiv2-api/stores"
+	"github.com/hydrologicengineeringcenter/nsiapi/internal/config"
+	"github.com/hydrologicengineeringcenter/nsiapi/internal/handlers"
+	"github.com/hydrologicengineeringcenter/nsiapi/internal/stores"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
@@ -30,10 +31,10 @@ func main() {
 	}))
 	e.Use(middleware.Logger())
 
-	api := ApiHandler{
-		tempStore,
-		dataStore,
-		config,
+	api := handlers.ApiHandler{
+		TempStore: tempStore,
+		DataStore: dataStore,
+		Config:    config,
 	}
 
 	e.GET(apiprefix+"/home", api.ApiHome)

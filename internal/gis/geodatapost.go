@@ -1,4 +1,4 @@
-package main
+package gis
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo"
-	"github.com/rgoss/gdal/ogr"
+	ogr "github.com/lukeroth/gdal"
 )
 
 type GeodataPost struct {

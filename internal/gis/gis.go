@@ -1,4 +1,4 @@
-package main
+package gis
 
 import (
 	"fmt"
@@ -6,10 +6,10 @@ import (
 	"strconv"
 	s "strings"
 
-	"di2e.net/cwbi/nsiv2-api/stores"
+	"github.com/hydrologicengineeringcenter/nsiapi/internal/stores"
 
+	ogr "github.com/lukeroth/gdal"
 	"github.com/paulmach/orb"
-	"github.com/rgoss/gdal/ogr"
 )
 
 var featureReportNumber int = 10000
