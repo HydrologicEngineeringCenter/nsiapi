@@ -76,7 +76,7 @@ func RunDb2FileEtl(etl *Db2FileEtl, tempStore *stores.TempStore, tempStoragePath
 		} else {
 			var layer ogr.Layer
 			if etl.GeomFilter == nil {
-				filter := ogr.Create(ogr.GT_Null)
+				filter := ogr.Create(ogr.GT_None)
 				layer = dsIn.ExecuteSQL(etl.Sql, filter, etl.DbDialect)
 			} else {
 				layer = dsIn.ExecuteSQL(etl.Sql, *etl.GeomFilter, etl.DbDialect)

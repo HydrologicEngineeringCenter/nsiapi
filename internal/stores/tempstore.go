@@ -20,8 +20,11 @@ func InitTempStore(config c.AppConfig) (*TempStore, error) {
 
 func (ts *TempStore) Open(appConfig c.AppConfig) error {
 	db, err := bolt.Open(appConfig.TempStoragePath+"/temp.db", 0600, nil)
+	if err != nil {
+		return err
+	}
 	err = db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte("STATUS"))
+		_, err = tx.CreateBucketIfNotExists([]byte("STATUS"))
 		if err != nil {
 			return fmt.Errorf("could not create root bucket: %v", err)
 		}

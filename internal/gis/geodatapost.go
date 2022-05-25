@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 
 	"github.com/google/uuid"
+	"github.com/hydrologicengineeringcenter/nsiapi/internal/utils"
 	"github.com/labstack/echo"
 	ogr "github.com/lukeroth/gdal"
 )
@@ -14,8 +15,8 @@ type GeodataPost struct {
 	GDALDriverName  string
 	Guid            string
 	ds              ogr.DataSource
-	echoContext     echo.Context
-	tempStoragePath string
+	EchoContext     echo.Context
+	TempStoragePath string
 }
 
 func (gd *GeodataPost) Close() {
@@ -27,7 +28,6 @@ func (gd *GeodataPost) GetGeometryAsWkb() (*[]uint8, error) {
 	feature := layer.NextFeature()
 	defer feature.Destroy()
 	fg := feature.Geometry()
-	//geometryProcessor(&fg)
 	gdalwkb, err := fg.ToWKB()
 	if err != nil {
 		return nil, err
@@ -40,7 +40,6 @@ func (gd *GeodataPost) GetGeometry() (*ogr.Geometry, error) {
 	feature := layer.NextFeature()
 	defer feature.Destroy()
 	fg := feature.Geometry()
-	//geometryProcessor(&fg)
 	filterGeom := fg.Clone()
 	return &filterGeom, nil
 }
@@ -57,7 +56,7 @@ func (gd *GeodataPost) Open() error {
 }
 
 func (gd *GeodataPost) OpenFromBody() error {
-	bodyBytes, err := ioutil.ReadAll(gd.echoContext.Request().Body)
+	bodyBytes, err := ioutil.ReadAll(gd.EchoContext.Request().Body)
 	if err != nil {
 		return err
 	}
@@ -71,7 +70,7 @@ func (gd *GeodataPost) OpenFromBody() error {
 }
 
 func (gd *GeodataPost) HasFile() (bool, error) {
-	file, err := gd.echoContext.FormFile("file")
+	file, err := gd.EchoContext.FormFile("file")
 	if err != nil {
 		return false, err
 	}
@@ -79,27 +78,27 @@ func (gd *GeodataPost) HasFile() (bool, error) {
 }
 
 func (gd *GeodataPost) ExtractFile() error {
-	file, err := gd.echoContext.FormFile("file")
+	file, err := gd.EchoContext.FormFile("file")
 	if err != nil {
 		return err
 	}
 	uuid, _ := uuid.NewUUID()
 	tempname := uuid.String()
 	gd.Guid = tempname
-	newfile, err := CopyPostFileToTemp(gd.tempStoragePath, tempname, file)
+	newfile, err := utils.CopyPostFileToTemp(gd.TempStoragePath, tempname, file)
 	if err != nil {
 		return err
 	}
-	files, err := Unzip(newfile, gd.tempStoragePath+tempname)
+	files, err := utils.Unzip(newfile, gd.TempStoragePath+tempname)
 	if err != nil {
 		return err
 	}
-	gisFiletype, gisFileName, err := GetGisFileType(files)
+	gisFiletype, gisFileName, err := utils.GetGisFileType(files)
 	gd.GisFileName = gisFileName
 	if err != nil {
 		return err
 	}
-	ogrDriverName, err := GetGdalDriverName(gisFiletype)
+	ogrDriverName, err := utils.GetGdalDriverName(gisFiletype)
 	gd.GDALDriverName = ogrDriverName
 	if err != nil {
 		return err
