@@ -14,7 +14,7 @@ const NsiSelect = `SELECT fd_id,x,y,cbfips,occtype,yrbuilt,num_story,resunits,st
 					pop2pmo65,st_damcat,basement,bldgtype,found_ht,found_type,val_struct,
 					val_cont,val_vehic,med_yr_blt,fipsentry,firmzone,o65disable,
 					u65disable,ground_elv
-				   FROM nsi `
+				   FROM {table_name}`
 
 type Nsi struct {
 	Fd_id      int32   `db:"fd_id" json:"fd_id"`
