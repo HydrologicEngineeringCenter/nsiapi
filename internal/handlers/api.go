@@ -51,6 +51,7 @@ type ApiHandler struct {
 	TempStore *stores.TempStore
 	DataStore *stores.DbStore
 	Config    config.AppConfig
+	GQStore   *stores.PSStore
 }
 
 func (api *ApiHandler) ApiHome(c echo.Context) error {
@@ -112,9 +113,14 @@ func (api *ApiHandler) GetStructure(c echo.Context) error {
 }
 
 func (api *ApiHandler) GetStructures(c echo.Context) error {
-	fips := c.QueryParam("fips")
-	bbox := c.QueryParam("bbox")
-	apifmt := c.QueryParam("fmt")
+	var urlParams = map[string]string{}
+	paramKeys := []string{"quality", "dataset", "version", "fips", "bbox", "fmt"}
+	for _, k := range paramKeys {
+		urlParams[k] = c.QueryParam(k)
+	}
+	fips := urlParams["fips"]
+	bbox := urlParams["bbox"]
+	apifmt := urlParams["bbox"]
 	if apifmt == "" {
 		apifmt = "fc"
 	}

@@ -19,7 +19,10 @@ func main() {
 	if err != nil {
 		log.Printf("Error initializing data store: %s. Continuing with startup.", err)
 	}
-
+	gqStore, err := stores.NewGQStore(config)
+	if err != nil {
+		log.Fatalf("Error initializing goquery data store: %s. Continuing with startup.", err)
+	}
 	tempStore, err := stores.InitTempStore(config)
 	if err != nil {
 		log.Fatalf("Error initializing local temparary data store: %s. Shutting down.", err)
@@ -35,6 +38,7 @@ func main() {
 		TempStore: tempStore,
 		DataStore: dataStore,
 		Config:    config,
+		GQStore:   gqStore,
 	}
 
 	e.GET(apiprefix+"/home", api.ApiHome)

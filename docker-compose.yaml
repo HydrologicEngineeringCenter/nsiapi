@@ -21,6 +21,7 @@ services:
       - DBSTORE=pgx
       - DBDRIVER=postgres
       - DBSSLMODE=false
+      - DEBUG=false
         # for db connection
       - DBPORT=25432
         # for api end connection

@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 	"strconv"
+
+	dq "github.com/usace/goquery"
 )
 
 type AppConfig struct {
@@ -44,4 +46,16 @@ func GetConfig() AppConfig {
 		appConfig.Debug = true
 	}
 	return appConfig
+}
+
+func (c *AppConfig) Rdbmsconfig() dq.RdbmsConfig {
+	return dq.RdbmsConfig{
+		Dbuser:   c.Dbuser,
+		Dbpass:   c.Dbpass,
+		Dbhost:   c.Dbhost,
+		Dbport:   c.Dbport,
+		Dbname:   c.Dbname,
+		DbDriver: "postgres",
+		DbStore:  "pgx",
+	}
 }
