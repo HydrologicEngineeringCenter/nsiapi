@@ -11,7 +11,6 @@ require (
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/labstack/echo v3.3.10+incompatible
-	github.com/lukeroth/gdal v0.0.0-20211109203239-b571df3ee436
 	github.com/paulmach/orb v0.7.1
 )
 
@@ -22,6 +21,7 @@ require (
 	github.com/jackc/fake v0.0.0-20150926172116-812a484cc733 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/labstack/gommon v0.3.1 // indirect
+	github.com/lukeroth/gdal v0.0.0-20211109203239-b571df3ee436 // indirect
 	github.com/mattn/go-colorable v0.1.11 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
