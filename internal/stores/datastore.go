@@ -144,11 +144,14 @@ type DbStore struct {
 func InitDbStore(appConfig config.AppConfig) (*DbStore, error) {
 	log.Printf("Connecting to: %s/%s", appConfig.Dbhost, appConfig.Dbname)
 	log.Printf("Using pool size of %d", appConfig.DbMaxConnections)
-	dburl := fmt.Sprintf("user=%s password=%s host=%s port=5432 database=%s sslmode=disable",
-		appConfig.Dbuser, appConfig.Dbpass, appConfig.Dbhost, appConfig.Dbname)
+	dburl := fmt.Sprintf("user=%s password=%s host=%s port=%s database=%s sslmode=disable",
+		appConfig.Dbuser, appConfig.Dbpass, appConfig.Dbhost, appConfig.Dbport, appConfig.Dbname)
 	con, err := sqlx.Connect("pgx", dburl)
 	if err != nil {
 		log.Println(err)
+		// no point in starting the server if unable to establish db connection
+		panic(err)
+		// return &DbStore{}, err
 	}
 	con.SetMaxOpenConns(appConfig.DbMaxConnections)
 	store := DbStore{

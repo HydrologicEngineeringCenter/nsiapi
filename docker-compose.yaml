@@ -4,22 +4,24 @@ services:
     container_name: NSIAPI_DEV
     build:
       context: deploy/dev/
-      dockerfile: Dockerfile
+      dockerfile: backup.Dockerfile
     ports:
       - 3031:3031
     volumes:
       - .:/workspaces/nsiapi
       - ../gdal:/workspaces/gdal
+      - ../gdal-old:/workspaces/gdal-old
     # env_file:
     #   - .devcontainer/devcontainer.env
     environment:
-      - DBUSER=db_user
-      - DBPASS=password
+      - DBUSER=admin
+      - DBPASS=notPassword
       - DBNAME=gis
       - DBHOST=host.docker.internal
       - DBSTORE=pgx
       - DBDRIVER=postgres
       - DBSSLMODE=false
+      - PORT=25432
       - DBPORT=25432
     working_dir: /workspaces/nsiapi
     tty: true
@@ -38,4 +40,3 @@ services:
 
 volumes:
   pgdata:
-

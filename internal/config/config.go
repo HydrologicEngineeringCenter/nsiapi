@@ -7,6 +7,7 @@ import (
 )
 
 type AppConfig struct {
+	Dbport           string
 	Dbuser           string
 	Dbpass           string
 	Dbhost           string
@@ -28,6 +29,7 @@ func GetConfig() AppConfig {
 	appConfig.Dbpass = os.Getenv("DBPASS")
 	appConfig.Dbhost = os.Getenv("DBHOST")
 	appConfig.Dbname = os.Getenv("DBNAME")
+	appConfig.Dbport = os.Getenv("DBPORT")
 	maxConnections, err := strconv.Atoi(os.Getenv("DBMAXCONNECTIONS"))
 	log.Println(maxConnections)
 	if err != nil || maxConnections == 0 {
