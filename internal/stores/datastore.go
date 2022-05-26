@@ -7,6 +7,7 @@ import (
 	"github.com/hydrologicengineeringcenter/nsiapi/internal/config"
 	_ "github.com/jackc/pgx/stdlib"
 	"github.com/jmoiron/sqlx"
+	"github.com/usace/goquery"
 )
 
 const NsiSelect = `SELECT fd_id,x,y,cbfips,occtype,yrbuilt,num_story,resunits,stacked,
@@ -139,6 +140,7 @@ var HexbinDatasets = map[string]string{
 
 type DbStore struct {
 	Db *sqlx.DB
+	DS *goquery.DataStore
 }
 
 func InitDbStore(appConfig config.AppConfig) (*DbStore, error) {
@@ -151,11 +153,21 @@ func InitDbStore(appConfig config.AppConfig) (*DbStore, error) {
 		log.Println(err)
 		// no point in starting the server if unable to establish db connection
 		panic(err)
-		// return &DbStore{}, err
 	}
 	con.SetMaxOpenConns(appConfig.DbMaxConnections)
+
+	dbconf := appConfig.Rdbmsconfig()
+	ds, err := goquery.NewRdbmsDataStore(&dbconf)
+	if err != nil {
+		log.Printf("Unable to connect to database during startup: %s", err)
+	} else {
+		log.Printf("Connected as %s to database %s:%s/%s", appConfig.Dbuser, appConfig.Dbhost, appConfig.Dbport, appConfig.Dbname)
+	}
+
 	store := DbStore{
 		Db: con,
+		DS: &ds,
 	}
+
 	return &store, err
 }

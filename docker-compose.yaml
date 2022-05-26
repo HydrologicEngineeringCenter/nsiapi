@@ -26,6 +26,10 @@ services:
       - DBPORT=25432
         # for api end connection
       - PORT=3031
+      - TEMPSTORAGEPATH=/workspaces
+      - DEFAULT_DATASET_NAME=testDataset
+      - DEFAULT_DATASET_VERSION=0.0.2
+      - DEFAULT_DATASET_QUALITY=high
     working_dir: /workspaces/nsiapi
     tty: true
     entrypoint: ["bash"]

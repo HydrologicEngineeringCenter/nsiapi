@@ -3,12 +3,9 @@ package stores
 import (
 	"errors"
 	"fmt"
-	"log"
-	"reflect"
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/hydrologicengineeringcenter/nsiapi/internal/config"
 	"github.com/hydrologicengineeringcenter/nsiapi/internal/global"
 	"github.com/hydrologicengineeringcenter/nsiapi/internal/models"
 	"github.com/usace/goquery"
@@ -18,22 +15,9 @@ type PSStore struct {
 	DS goquery.DataStore
 }
 
-func NewGQStore(c config.AppConfig) (*PSStore, error) {
-	dbconf := c.Rdbmsconfig()
-	ds, err := goquery.NewRdbmsDataStore(&dbconf)
-	if err != nil {
-		log.Printf("Unable to connect to database during startup: %s", err)
-	} else {
-		log.Printf("Connected as %s to database %s:%s/%s", c.Dbuser, c.Dbhost, c.Dbport, c.Dbname)
-	}
-
-	st := PSStore{ds}
-	return &st, nil
-}
-
-func (st *PSStore) AddDomain(d *models.Domain) error {
+func (st DbStore) AddDomain(d *models.Domain) error {
 	var dId uuid.UUID
-	err := st.DS.Select().
+	err := (*st.DS).Select().
 		DataSet(&domainTable).
 		StatementKey("insert").
 		Params(d.FieldId, d.Value).
@@ -46,9 +30,9 @@ func (st *PSStore) AddDomain(d *models.Domain) error {
 	return nil
 }
 
-func (st *PSStore) AddField(f *models.Field) error {
+func (st DbStore) AddField(f *models.Field) error {
 	var fId uuid.UUID
-	err := st.DS.Select().
+	err := (*st.DS).Select().
 		DataSet(&fieldTable).
 		StatementKey("insert").
 		Params(f.DbName, f.Type, f.Description, f.IsDomain).
@@ -61,9 +45,9 @@ func (st *PSStore) AddField(f *models.Field) error {
 	return nil
 }
 
-func (st *PSStore) AddMember(m *models.Member) error {
+func (st DbStore) AddMember(m *models.Member) error {
 	var mId uuid.UUID
-	err := st.DS.Select().
+	err := (*st.DS).Select().
 		DataSet(&memberTable).
 		StatementKey("insert").
 		Params(m.GroupId, m.Role, m.UserId).
@@ -76,9 +60,9 @@ func (st *PSStore) AddMember(m *models.Member) error {
 	return nil
 }
 
-func (st *PSStore) AddSchemaFieldAssociation(sf models.SchemaField) error {
+func (st DbStore) AddSchemaFieldAssociation(sf models.SchemaField) error {
 	var schemaId uuid.UUID
-	err := st.DS.Select().
+	err := (*st.DS).Select().
 		DataSet(&schemaFieldTable).
 		StatementKey("insert").
 		Params(sf.Id, sf.NsiFieldId, sf.IsPrivate).
@@ -90,9 +74,9 @@ func (st *PSStore) AddSchemaFieldAssociation(sf models.SchemaField) error {
 	return nil
 }
 
-func (st *PSStore) AddSchema(schema *models.Schema) error {
+func (st DbStore) AddSchema(schema *models.Schema) error {
 	var schemaId uuid.UUID
-	err := st.DS.Select().
+	err := (*st.DS).Select().
 		DataSet(&schemaTable).
 		StatementKey("insert").
 		Params(schema.Name, schema.Version, schema.Notes).
@@ -105,9 +89,9 @@ func (st *PSStore) AddSchema(schema *models.Schema) error {
 	return err
 }
 
-func (st *PSStore) AddDataset(d *models.Dataset) error {
+func (st DbStore) AddDataset(d *models.Dataset) error {
 	var ids []uuid.UUID
-	err := st.DS.
+	err := (*st.DS).
 		Select().
 		DataSet(&datasetTable).
 		StatementKey("insertNullShape").
@@ -131,9 +115,9 @@ func (st *PSStore) AddDataset(d *models.Dataset) error {
 	return err
 }
 
-func (st *PSStore) AddGroup(g *models.Group) error {
+func (st DbStore) AddGroup(g *models.Group) error {
 	var id uuid.UUID
-	err := st.DS.Select().
+	err := (*st.DS).Select().
 		DataSet(&groupTable).
 		StatementKey("insert").
 		Params(g.Name).
@@ -146,9 +130,9 @@ func (st *PSStore) AddGroup(g *models.Group) error {
 	return err
 }
 
-func (st *PSStore) GetDomainId(d models.Domain) (uuid.UUID, error) {
+func (st DbStore) GetDomainId(d models.Domain) (uuid.UUID, error) {
 	var ids []uuid.UUID
-	err := st.DS.
+	err := (*st.DS).
 		Select().
 		DataSet(&schemaTable).
 		StatementKey("selectId").
@@ -167,9 +151,9 @@ func (st *PSStore) GetDomainId(d models.Domain) (uuid.UUID, error) {
 	return ids[0], err
 }
 
-func (st *PSStore) GetGroupId(g *models.Group) error {
+func (st DbStore) GetGroupId(g *models.Group) error {
 	var ids []uuid.UUID
-	err := st.DS.
+	err := (*st.DS).
 		Select().
 		DataSet(&groupTable).
 		StatementKey("selectId").
@@ -189,9 +173,9 @@ func (st *PSStore) GetGroupId(g *models.Group) error {
 	return nil
 }
 
-func (st *PSStore) GetMemberId(m *models.Member) error {
+func (st DbStore) GetMemberId(m *models.Member) error {
 	var ids []uuid.UUID
-	err := st.DS.
+	err := (*st.DS).
 		Select().
 		DataSet(&memberTable).
 		StatementKey("selectId").
@@ -211,9 +195,9 @@ func (st *PSStore) GetMemberId(m *models.Member) error {
 	return nil
 }
 
-func (st *PSStore) GetDatasetId(d *models.Dataset) error {
+func (st DbStore) GetDatasetId(d *models.Dataset) error {
 	var ids []uuid.UUID
-	err := st.DS.
+	err := (*st.DS).
 		Select().
 		DataSet(&datasetTable).
 		StatementKey("selectId").
@@ -245,9 +229,9 @@ func (st *PSStore) GetDatasetId(d *models.Dataset) error {
 }
 
 // GetDataset queries based on its Name, Version, Purpose, and QualityId
-func (st *PSStore) GetDataset(d *models.Dataset) error {
+func (st DbStore) GetDataset(d *models.Dataset) error {
 	var ds []models.Dataset
-	err := st.DS.
+	err := (*st.DS).
 		Select().
 		DataSet(&datasetTable).
 		StatementKey("select").
@@ -265,9 +249,9 @@ func (st *PSStore) GetDataset(d *models.Dataset) error {
 	return nil
 }
 
-func (st *PSStore) GetFieldId(f *models.Field) error {
+func (st DbStore) GetFieldId(f *models.Field) error {
 	var ids []uuid.UUID
-	err := st.DS.
+	err := (*st.DS).
 		Select().
 		DataSet(&fieldTable).
 		StatementKey("select").
@@ -287,9 +271,9 @@ func (st *PSStore) GetFieldId(f *models.Field) error {
 
 // GetSchemaId queries the database based on the supplied schema name and version.
 // Replaces Id field if a corresponding entry exists, otherwise change Id field to uuid.Nil
-func (st *PSStore) GetSchemaId(s *models.Schema) error {
+func (st DbStore) GetSchemaId(s *models.Schema) error {
 	var ids []uuid.UUID
-	err := st.DS.
+	err := (*st.DS).
 		Select().
 		DataSet(&schemaTable).
 		StatementKey("selectId").
@@ -310,9 +294,9 @@ func (st *PSStore) GetSchemaId(s *models.Schema) error {
 	return nil
 }
 
-func (st *PSStore) GetQuality(q *models.Quality) error {
+func (st DbStore) GetQuality(q *models.Quality) error {
 	var qDb models.Quality
-	err := st.DS.
+	err := (*st.DS).
 		Select().
 		DataSet(&qualityTable).
 		StatementKey("select").
@@ -326,9 +310,10 @@ func (st *PSStore) GetQuality(q *models.Quality) error {
 	return nil
 }
 
-func (st *PSStore) GetQualityId(q *models.Quality) error {
+// GetQualityId queries based on q.Value
+func (st DbStore) GetQualityId(q *models.Quality) error {
 	var ids []uuid.UUID
-	err := st.DS.
+	err := (*st.DS).
 		Select().
 		DataSet(&qualityTable).
 		StatementKey("selectId").
@@ -349,9 +334,9 @@ func (st *PSStore) GetQualityId(q *models.Quality) error {
 }
 
 // Check if table exists in database
-func (st *PSStore) TableExists(schema string, table string) (bool, error) {
+func (st DbStore) TableExists(schema string, table string) (bool, error) {
 	var result bool
-	err := st.DS.Select(`
+	err := (*st.DS).Select(`
     SELECT EXISTS (
         SELECT FROM pg_tables
         WHERE
@@ -365,10 +350,10 @@ func (st *PSStore) TableExists(schema string, table string) (bool, error) {
 	return result, err
 }
 
-func (st *PSStore) SchemaFieldAssociationExists(sf models.SchemaField) (bool, error) {
+func (st DbStore) SchemaFieldAssociationExists(sf models.SchemaField) (bool, error) {
 	var ids []uuid.UUID
 	var result bool
-	err := st.DS.
+	err := (*st.DS).
 		Select().
 		DataSet(&schemaFieldTable).
 		StatementKey("selectId").
@@ -386,11 +371,11 @@ func (st *PSStore) SchemaFieldAssociationExists(sf models.SchemaField) (bool, er
 	return result, err
 }
 
-func (st *PSStore) UpdateDatasetBBox(d models.Dataset) error {
+func (st DbStore) UpdateDatasetBBox(d models.Dataset) error {
 	// hacky way to dynamically generate table_name since identifiers cannot be used as variables
 	// should be safe from sql injection since all table names are generated internally from guids
 	var ids []interface{}
-	err := st.DS.
+	err := (*st.DS).
 		Select(strings.ReplaceAll(datasetTable.Statements["updateBBox"], "{table_name}", d.TableName)).
 		Params(d.Id).
 		Dest(&ids). // interface doesn't work without a dest sink
@@ -399,7 +384,7 @@ func (st *PSStore) UpdateDatasetBBox(d models.Dataset) error {
 }
 
 // ShpDataInStore checks if shp file has already been uploaded to database
-// func (st *PSStore) ShpDataInStore(d models.Dataset, s *shp.Reader) (bool, error) {
+// func (st DbStore) ShpDataInStore(d models.Dataset, s *shp.Reader) (bool, error) {
 // 	// algo takes a set of random sample points, if any sample matches with
 // 	// an entry in the db, return true
 // 	var ids []int
@@ -418,7 +403,7 @@ func (st *PSStore) UpdateDatasetBBox(d models.Dataset) error {
 // 		sampleIdx := rand.Int() % s.AttributeCount()
 // 		x := s.ReadAttribute(sampleIdx, xIdx)
 // 		y := s.ReadAttribute(sampleIdx, yIdx)
-// 		err := st.DS.
+// 		err := (*st.DS).
 // 			Select(strings.ReplaceAll(datasetTable.Statements["structureInInventory"], "{table_name}", d.TableName)).
 // 			Params(x, y).
 // 			Dest(&ids).
@@ -433,9 +418,9 @@ func (st *PSStore) UpdateDatasetBBox(d models.Dataset) error {
 // 	return false, nil
 // }
 
-func (st *PSStore) UpdateMemberRole(m *models.Member) error {
+func (st DbStore) UpdateMemberRole(m *models.Member) error {
 	var ids []interface{}
-	err := st.DS.
+	err := (*st.DS).
 		Select().
 		DataSet(&memberTable).
 		StatementKey("updateRole").
@@ -446,9 +431,9 @@ func (st *PSStore) UpdateMemberRole(m *models.Member) error {
 }
 
 // ElevationColumnExists tests if elevation column exists for inventory table
-func (st *PSStore) ElevationColumnExists(d models.Dataset) (bool, error) {
+func (st DbStore) ElevationColumnExists(d models.Dataset) (bool, error) {
 	var res bool
-	err := st.DS.
+	err := (*st.DS).
 		Select(datasetTable.Statements["elevationColumnExists"]).
 		Params(global.DB_SCHEMA, d.TableName, global.ELEVATION_COLUMN_NAME).
 		Dest(&res).
@@ -459,10 +444,13 @@ func (st *PSStore) ElevationColumnExists(d models.Dataset) (bool, error) {
 	return res, nil
 }
 
-func (st *PSStore) AddElevationColumn(d models.Dataset) error {
+func (st DbStore) AddElevationColumn(d models.Dataset) error {
 	sql := strings.ReplaceAll(datasetTable.Statements["addElevColumn"], "{table_name}", d.TableName)
-	tx, err := st.DS.Transaction()
-	err = st.DS.Exec(&tx, sql)
+	tx, err := (*st.DS).Transaction()
+	if err != nil {
+		return err
+	}
+	err = (*st.DS).Exec(&tx, sql)
 	if err != nil {
 		return err
 	}
@@ -470,10 +458,10 @@ func (st *PSStore) AddElevationColumn(d models.Dataset) error {
 	return err
 }
 
-func (st *PSStore) GetEmptyElevationPoints(d models.Dataset, count int, offset int) (models.Points, error) {
+func (st DbStore) GetEmptyElevationPoints(d models.Dataset, count int, offset int) (models.Points, error) {
 	sql := strings.ReplaceAll(datasetTable.Statements["selectEmptyElevationCoords"], "{table_name}", d.TableName)
 	var coords models.Points
-	err := st.DS.
+	err := (*st.DS).
 		Select(sql).
 		Params(count, offset).
 		Dest(&coords).
@@ -484,20 +472,18 @@ func (st *PSStore) GetEmptyElevationPoints(d models.Dataset, count int, offset i
 	return coords, nil
 }
 
-func (st *PSStore) UpdateElevationAtPoint(d models.Dataset, points models.Points) error {
+func (st DbStore) UpdateElevationAtPoint(d models.Dataset, points models.Points) error {
 	// batchSize here is the db update batchSize, not to be confused with the goroutine batchSize
 	batchSize := 1000
 	var tx goquery.Tx
 	var err error
-	tx, err = st.DS.Transaction()
+	tx, err = (*st.DS).Transaction()
 	if err != nil {
 		return err
 	}
 	for i, p := range points {
-		if i%batchSize == 0 {
-		}
 		sql := strings.ReplaceAll(datasetTable.Statements["updateElevation"], "{table_name}", d.TableName)
-		err = st.DS.Exec(&tx, sql, *p.Elevation, p.FdId)
+		err = (*st.DS).Exec(&tx, sql, *p.Elevation, p.FdId)
 		if err != nil {
 			return err
 		}
@@ -507,7 +493,7 @@ func (st *PSStore) UpdateElevationAtPoint(d models.Dataset, points models.Points
 			if err != nil {
 				return err
 			}
-			tx, err = st.DS.Transaction()
+			tx, err = (*st.DS).Transaction()
 			if err != nil {
 				return err
 			}
@@ -517,128 +503,6 @@ func (st *PSStore) UpdateElevationAtPoint(d models.Dataset, points models.Points
 	err = tx.Commit()
 	if err != nil {
 		return err
-	}
-	return nil
-}
-
-//////////////////////////////////////////////////
-// Add row to sql table generically - TODO unstable, need to test
-//////////////////////////////////////////////////
-
-// appmodels. contrainsts generic database access to only a list of structs
-type appmodels interface {
-	models.Field | models.Schema | models.Domain | models.SchemaField | models.Dataset | models.Group | models.Member | models.Quality
-}
-
-func getAppmodels[T appmodels](m *T) uuid.UUID {
-	return reflect.ValueOf(*m).FieldByName("Id").Interface().(uuid.UUID)
-}
-
-func setAppmodels[T appmodels](m *T, id uuid.UUID) {
-	reflect.ValueOf(*m).FieldByName("Id").SetBytes(id[:])
-}
-
-type insertConfig struct {
-	StatementKey string
-	FieldOrder   []string
-	QueryTable   *goquery.TableDataSet
-}
-
-var (
-	// this mapper should be app specific
-	insertConfigMapper = map[reflect.Type]insertConfig{
-		// quality should not be insertable
-		reflect.TypeOf(models.Dataset{}): {
-			StatementKey: "insertNullShape",
-			FieldOrder: []string{
-				"Name", "Version", "SchemaId", "TableName", "Description", "Purpose", "CreatedBy", "QualityId", "GroupId",
-			},
-			QueryTable: &datasetTable,
-		},
-		reflect.TypeOf(models.Domain{}): {
-			StatementKey: "insert",
-			FieldOrder: []string{
-				"FieldId", "Value",
-			},
-			QueryTable: &domainTable,
-		},
-		reflect.TypeOf(models.Field{}): {
-			StatementKey: "insert",
-			FieldOrder: []string{
-				"DbName", "Type", "Description", "IsDomain",
-			},
-			QueryTable: &fieldTable,
-		},
-		reflect.TypeOf(models.Schema{}): {
-			StatementKey: "insert",
-			FieldOrder: []string{
-				"Name", "Version", "Notes",
-			},
-			QueryTable: &schemaTable,
-		},
-		reflect.TypeOf(models.SchemaField{}): {
-			StatementKey: "insert",
-			FieldOrder: []string{
-				"NsiFieldId", "IsPrivate",
-			},
-			QueryTable: &schemaFieldTable,
-		},
-		reflect.TypeOf(models.Group{}): {
-			StatementKey: "insert",
-			FieldOrder: []string{
-				"Name",
-			},
-			QueryTable: &groupTable,
-		},
-		reflect.TypeOf(models.Member{}): {
-			StatementKey: "insert",
-			FieldOrder: []string{
-				"GroupId", "Role", "UserId",
-			},
-			QueryTable: &memberTable,
-		},
-	}
-)
-
-// AddRow adds row to table based on a models.struct
-func AddRow[T appmodels](st *PSStore, m *T) error {
-	var params []interface{}
-	modelType := reflect.TypeOf(*m)
-	cfg := insertConfigMapper[modelType]
-	// loop over all insertable fields
-	for _, f := range cfg.FieldOrder {
-		fieldVal := reflect.ValueOf(*m).FieldByName(f)
-		valKind := fieldVal.Kind()
-		switch valKind {
-		case reflect.Bool:
-			params = append(params, fieldVal.Bool())
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			params = append(params, fieldVal.Int())
-		case reflect.Float32, reflect.Float64:
-			params = append(params, fieldVal.Float())
-		case reflect.String:
-			params = append(params, fieldVal.String())
-		case reflect.TypeOf(uuid.Nil).Kind():
-			// uuid  Kind() is Ox17 Array, potentially not safe
-			params = append(params, fieldVal.Interface().(uuid.UUID))
-		default:
-			return fmt.Errorf("Generic AddRow does not support param of type: %s", valKind)
-		}
-	}
-
-	var id uuid.UUID
-	err := st.DS.
-		Select().
-		DataSet(cfg.QueryTable).
-		StatementKey(cfg.StatementKey).
-		Params(params...).
-		Dest(&id).
-		Fetch()
-	if err != nil {
-		return err
-	}
-	if getAppmodels(m) == uuid.Nil && id != uuid.Nil {
-		setAppmodels(m, id)
 	}
 	return nil
 }

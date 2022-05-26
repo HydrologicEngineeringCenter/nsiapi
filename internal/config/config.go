@@ -9,18 +9,21 @@ import (
 )
 
 type AppConfig struct {
-	Dbport           string
-	Dbuser           string
-	Dbpass           string
-	Dbhost           string
-	Dbname           string
-	DbMaxConnections int
-	FeatureLimit     string
-	TempStoragePath  string
-	Port             string
-	Debug            bool
-	AwsBucket        string
-	AwsPrefix        string
+	Dbport                string
+	Dbuser                string
+	Dbpass                string
+	Dbhost                string
+	Dbname                string
+	DbMaxConnections      int
+	FeatureLimit          string
+	TempStoragePath       string
+	Port                  string
+	Debug                 bool
+	AwsBucket             string
+	AwsPrefix             string
+	DefaultDatasetName    string
+	DefaultDatasetVersion string
+	DefaultDatasetQuality string
 }
 
 func GetConfig() AppConfig {
@@ -45,6 +48,9 @@ func GetConfig() AppConfig {
 	if debug == "TRUE" {
 		appConfig.Debug = true
 	}
+	appConfig.DefaultDatasetName = os.Getenv("DEFAULT_DATASET_NAME")
+	appConfig.DefaultDatasetVersion = os.Getenv("DEFAULT_DATASET_VERSION")
+	appConfig.DefaultDatasetQuality = os.Getenv("DEFAULT_DATASET_QUALITY")
 	return appConfig
 }
 

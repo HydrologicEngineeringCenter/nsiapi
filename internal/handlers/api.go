@@ -12,6 +12,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/hydrologicengineeringcenter/nsiapi/internal/config"
 	"github.com/hydrologicengineeringcenter/nsiapi/internal/gis"
+	"github.com/hydrologicengineeringcenter/nsiapi/internal/models"
+	"github.com/hydrologicengineeringcenter/nsiapi/internal/models/types"
 	"github.com/hydrologicengineeringcenter/nsiapi/internal/stores"
 	"github.com/labstack/echo"
 
@@ -51,7 +53,6 @@ type ApiHandler struct {
 	TempStore *stores.TempStore
 	DataStore *stores.DbStore
 	Config    config.AppConfig
-	GQStore   *stores.PSStore
 }
 
 func (api *ApiHandler) ApiHome(c echo.Context) error {
@@ -113,10 +114,13 @@ func (api *ApiHandler) GetStructure(c echo.Context) error {
 }
 
 func (api *ApiHandler) GetStructures(c echo.Context) error {
-	var urlParams = map[string]string{}
 	paramKeys := []string{"quality", "dataset", "version", "fips", "bbox", "fmt"}
-	for _, k := range paramKeys {
-		urlParams[k] = c.QueryParam(k)
+	urlParams := parseUrlParams(&c, paramKeys)
+	// if dataset isn't specified, default to designated
+	if urlParams["dataset"] == "" {
+		urlParams["dataset"] = api.Config.DefaultDatasetName
+		urlParams["version"] = api.Config.DefaultDatasetVersion
+		urlParams["quality"] = api.Config.DefaultDatasetQuality
 	}
 	fips := urlParams["fips"]
 	bbox := urlParams["bbox"]
@@ -134,8 +138,28 @@ func (api *ApiHandler) GetStructures(c echo.Context) error {
 		return err
 	}
 	criteria := buildCritieria(bboxCriteria, fipsCriteria)
-	fmt.Println(criteria)
-	rows, err := api.DataStore.Db.Queryx(fmt.Sprintf("%s %s", stores.NsiSelect, criteria), params...)
+
+	q := models.Quality{
+		Value: types.Quality(urlParams["value"]),
+	}
+	err = api.DataStore.GetQualityId(&q)
+	if err != nil {
+		return err
+	}
+	d := models.Dataset{
+		Name:      urlParams["dataset"],
+		Version:   urlParams["version"],
+		QualityId: q.Id,
+	}
+	err = api.DataStore.GetDataset(&d)
+	if err != nil {
+		return err
+	}
+	if d.Id == uuid.Nil {
+		return fmt.Errorf("dataset not found")
+	}
+
+	rows, err := api.DataStore.Db.Queryx(strings.ReplaceAll(fmt.Sprintf("%s %s", stores.NsiSelect, criteria), "{table_name}", d.TableName), params...)
 	if err != nil {
 		return err
 	}
@@ -395,6 +419,10 @@ func (api *ApiHandler) GetHexbins(c echo.Context) error {
 
 }
 
+////////////////////////////////////////////////////////
+//  private util funcs
+////////////////////////////////////////////////////////
+
 func sanitizePath(path string) string {
 	path = filepath.Clean(path)
 	return strings.ReplaceAll(path, "..", "")
@@ -579,6 +607,7 @@ func getBboxCriteria(bbox string, crs int) (string, error) {
 	return bboxCriteria, nil
 }
 
+// array s contains int e?
 func contains(s []int, e int) bool {
 	for _, a := range s {
 		if a == e {
@@ -586,4 +615,12 @@ func contains(s []int, e int) bool {
 		}
 	}
 	return false
+}
+
+func parseUrlParams(c *echo.Context, keys []string) map[string]string {
+	var params = map[string]string{}
+	for _, k := range keys {
+		params[k] = (*c).QueryParam(k)
+	}
+	return params
 }
