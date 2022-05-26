@@ -1,0 +1,49 @@
+version: "3.9"
+services:
+  nsiapi:
+    container_name: NSIAPI_DEV
+    build:
+      context: deploy/dev/
+      dockerfile: backup.Dockerfile
+    ports:
+      - 3031:3031
+    volumes:
+      - .:/workspaces/nsiapi
+      - ../gdal:/workspaces/gdal
+      - ../gdal-old:/workspaces/gdal-old
+    # env_file:
+    #   - .devcontainer/devcontainer.env
+    environment:
+      - DBUSER=admin
+      - DBPASS=notPassword
+      - DBNAME=gis
+      - DBHOST=host.docker.internal
+      - DBSTORE=pgx
+      - DBDRIVER=postgres
+      - DBSSLMODE=false
+      - DEBUG=false
+        # for db connection
+      - DBPORT=25432
+        # for api end connection
+      - PORT=3031
+      - TEMPSTORAGEPATH=/workspaces
+      - DEFAULT_DATASET_NAME=testDataset
+      - DEFAULT_DATASET_VERSION=0.0.2
+      - DEFAULT_DATASET_QUALITY=high
+    working_dir: /workspaces/nsiapi
+    tty: true
+    entrypoint: ["bash"]
+
+  postgis:
+    image: kartoza/postgis
+    container_name: POSTGIS_NSIAPI_DEV
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASS=notPassword
+    ports:
+      - 25432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql
+
+volumes:
+  pgdata:
