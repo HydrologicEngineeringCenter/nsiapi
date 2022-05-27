@@ -33,7 +33,7 @@ type Domain struct {
 
 type Field struct {
 	Id          uuid.UUID      `db:"id"`
-	ShpName     string         // field name from shapefile
+	ShpName     string         // unused
 	DbName      string         `db:"name"`
 	Type        types.Datatype `db:"type"`
 	Description string         `db:"description"`
