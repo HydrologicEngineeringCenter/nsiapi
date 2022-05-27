@@ -13,7 +13,7 @@ import (
 
 var validFipsLengths []int = []int{2, 5, 11, 12, 15}
 
-func getFipsCriteria(fips string, params []interface{}) (string, []interface{}, error) {
+func GetFipsCriteria(fips string, params []interface{}) (string, []interface{}, error) {
 	var fipsCriteria string
 	if fips != "" {
 		if !utils.Contains(validFipsLengths, len(fips)) {
@@ -33,7 +33,7 @@ func getFipsCriteria(fips string, params []interface{}) (string, []interface{}, 
 	return fipsCriteria, params, nil
 }
 
-func getBboxCriteria(bbox string, crs int) (string, error) {
+func GetBboxCriteria(bbox string, crs int) (string, error) {
 	bboxCriteria := ""
 	if bbox != "" {
 		coords, err := gis.StringToCoords(bbox)
