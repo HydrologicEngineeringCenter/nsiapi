@@ -14,6 +14,7 @@ import (
 	"github.com/hydrologicengineeringcenter/nsiapi/internal/gis"
 	"github.com/hydrologicengineeringcenter/nsiapi/internal/models"
 	"github.com/hydrologicengineeringcenter/nsiapi/internal/models/types"
+	"github.com/hydrologicengineeringcenter/nsiapi/internal/sql"
 	"github.com/hydrologicengineeringcenter/nsiapi/internal/stores"
 	"github.com/labstack/echo"
 
@@ -23,7 +24,6 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/paulmach/orb/encoding/wkb"
-	"github.com/paulmach/orb/encoding/wkt"
 	"github.com/paulmach/orb/geojson"
 	"github.com/paulmach/orb/project"
 
@@ -131,11 +131,11 @@ func (api *ApiHandler) GetStructures(c echo.Context) error {
 		apifmt = "fc"
 	}
 	var params []interface{}
-	fipsCriteria, params, err := getFipsCriteria(fips, params)
+	fipsCriteria, params, err := sql.GetFipsCriteria(fips, params)
 	if err != nil {
 		return err
 	}
-	bboxCriteria, err := getBboxCriteria(bbox, 4326)
+	bboxCriteria, err := sql.GetBboxCriteria(bbox, 4326)
 	if err != nil {
 		return err
 	}
@@ -272,7 +272,7 @@ func (api *ApiHandler) StructuresFromPost(c echo.Context) error {
 
 func (api *ApiHandler) CreateExport(c echo.Context) error {
 	bbox := c.QueryParam("bbox")
-	bboxCriteria, err := getBboxCriteria(bbox, 4326)
+	bboxCriteria, err := sql.GetBboxCriteria(bbox, 4326)
 	if err != nil {
 		return err
 	}
@@ -344,7 +344,7 @@ func (api *ApiHandler) ExportFromUpload(c echo.Context) error {
 
 func (api *ApiHandler) GetStats(c echo.Context) error {
 	bbox := c.QueryParam("bbox")
-	bboxCriteria, err := getBboxCriteria(bbox, 4326)
+	bboxCriteria, err := sql.GetBboxCriteria(bbox, 4326)
 	if err != nil {
 		return err
 	}
@@ -416,7 +416,7 @@ func (api *ApiHandler) GetHexbins(c echo.Context) error {
 	if dataset == "" {
 		return errors.New("Invalid hexbin dataset")
 	}
-	bboxCriteria, err := getBboxCriteria(bbox, 3857)
+	bboxCriteria, err := sql.GetBboxCriteria(bbox, 3857)
 	if err != nil {
 		return err
 	}
