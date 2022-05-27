@@ -37,7 +37,6 @@ var objectEnd []byte = []byte("}")
 var arrayStart []byte = []byte("[")
 var arrayEnd []byte = []byte("]")
 var featureCollectionStart []byte = []byte(`{"type": "FeatureCollection","features":`)
-var validFipsLengths []int = []int{2, 5, 11, 12, 15}
 var proptag string = "prop"
 
 const featureTemplate = `{"type": "Feature","geometry": {"type": "Point","coordinates": [%f, %f]},"properties":`
@@ -116,15 +115,18 @@ func (api *ApiHandler) GetStructure(c echo.Context) error {
 func (api *ApiHandler) GetStructures(c echo.Context) error {
 	paramKeys := []string{"quality", "dataset", "version", "fips", "bbox", "fmt"}
 	urlParams := parseUrlParams(&c, paramKeys)
+	d := models.Dataset{
+		Name: c.Param("dataset"),
+	}
 	// if dataset isn't specified, default to designated
-	if urlParams["dataset"] == "" {
+	if d.Name == "" {
 		urlParams["dataset"] = api.Config.DefaultDatasetName
 		urlParams["version"] = api.Config.DefaultDatasetVersion
 		urlParams["quality"] = api.Config.DefaultDatasetQuality
 	}
 	fips := urlParams["fips"]
 	bbox := urlParams["bbox"]
-	apifmt := urlParams["bbox"]
+	apifmt := urlParams["fmt"]
 	if apifmt == "" {
 		apifmt = "fc"
 	}
@@ -137,20 +139,20 @@ func (api *ApiHandler) GetStructures(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	criteria := buildCritieria(bboxCriteria, fipsCriteria)
+	criteria := buildCriteria(bboxCriteria, fipsCriteria)
 
 	q := models.Quality{
-		Value: types.Quality(urlParams["value"]),
+		Value: types.QualityReverse[urlParams["quality"]],
 	}
 	err = api.DataStore.GetQualityId(&q)
 	if err != nil {
 		return err
 	}
-	d := models.Dataset{
-		Name:      urlParams["dataset"],
-		Version:   urlParams["version"],
-		QualityId: q.Id,
+	if q.Id == uuid.Nil {
+		return fmt.Errorf("quality not found")
 	}
+	d.Version = urlParams["version"]
+	d.QualityId = q.Id
 	err = api.DataStore.GetDataset(&d)
 	if err != nil {
 		return err
@@ -158,8 +160,19 @@ func (api *ApiHandler) GetStructures(c echo.Context) error {
 	if d.Id == uuid.Nil {
 		return fmt.Errorf("dataset not found")
 	}
+	sfs, err := api.DataStore.GetSchemaFieldsById(d.SchemaId)
+	if err != nil {
+		return err
+	}
 
-	rows, err := api.DataStore.Db.Queryx(strings.ReplaceAll(fmt.Sprintf("%s %s", stores.NsiSelect, criteria), "{table_name}", d.TableName), params...)
+	query := "SELECT "
+	colStr, err := api.generateSqlColListFromSchemaFields(&sfs)
+	if err != nil {
+		return err
+	}
+	query = query + colStr + fmt.Sprintf(`%s FROM %s %s`, query+colStr, d.TableName, criteria)
+	// query = strings.ReplaceAll(fmt.Sprintf("%s %s", stores.NsiSelect, criteria), "{table_name}", d.TableName)
+	rows, err := api.DataStore.Db.Queryx(query, params...)
 	if err != nil {
 		return err
 	}
@@ -335,7 +348,7 @@ func (api *ApiHandler) GetStats(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	criteria := buildCritieria(bboxCriteria, "")
+	criteria := buildCriteria(bboxCriteria, "")
 	var nsiSummary stores.NsiSummary
 	err = api.DataStore.Db.Get(&nsiSummary, fmt.Sprintf("%s %s", stores.NsiStatsSelect, criteria))
 	if err == nil {
@@ -549,7 +562,7 @@ func rowsToGeojsonStream(c echo.Context, rows *sqlx.Rows) error {
 	return nil
 }
 
-func buildCritieria(bboxCriteria string, fipsCritiera string) string {
+func buildCriteria(bboxCriteria string, fipsCritiera string) string {
 	var builder strings.Builder
 	builder.WriteString("where ")
 	if bboxCriteria != "" {
@@ -565,62 +578,29 @@ func buildCritieria(bboxCriteria string, fipsCritiera string) string {
 	return builder.String()
 }
 
-func getFipsCriteria(fips string, params []interface{}) (string, []interface{}, error) {
-	var fipsCriteria string
-	if fips != "" {
-		if !contains(validFipsLengths, len(fips)) {
-			return "", nil, errors.New("Invalid FIPS query")
-		}
-		params = append(params, fips)
-		paramsCount := len(params)
-		fipsLen := len(fips)
-		if fipsLen == 15 {
-			fipsCriteria = fmt.Sprintf("cbfips=$%d", paramsCount)
-		} else {
-			fipsCriteria = fmt.Sprintf("substr(cbfips,1,%d)=$%d", fipsLen, paramsCount)
-		}
-	} else {
-		fipsCriteria = ""
-	}
-	return fipsCriteria, params, nil
-}
-
-func getBboxCriteria(bbox string, crs int) (string, error) {
-	bboxCriteria := ""
-	if bbox != "" {
-		coords, err := gis.StringToCoords(bbox)
-		if err != nil {
-			log.Printf("Unable to convert bbox coordinates: %s; Error was %s", bbox, err.Error())
-			return "", err
-		} else {
-			ls := gis.CoordsToLineString(coords)
-			poly := gis.LineStringToPoly(ls)
-			switch crs {
-			case 3857:
-				merc := project.Polygon(*poly, project.WGS84.ToMercator)
-				bboxCriteria = fmt.Sprintf("st_intersects(shape,'SRID=3857;%s')", wkt.MarshalString(merc))
-			default:
-				bboxCriteria = fmt.Sprintf("st_intersects(shape,'SRID=4326;%s')", wkt.MarshalString(*poly))
-			}
-		}
-	}
-	return bboxCriteria, nil
-}
-
-// array s contains int e?
-func contains(s []int, e int) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
-}
-
 func parseUrlParams(c *echo.Context, keys []string) map[string]string {
 	var params = map[string]string{}
 	for _, k := range keys {
 		params[k] = (*c).QueryParam(k)
 	}
 	return params
+}
+
+// generateSqlColFromSchemaFields generates a list of columns from a list of SchemaFields
+func (api *ApiHandler) generateSqlColListFromSchemaFields(sfs *[]models.SchemaField) (string, error) {
+	var buf strings.Builder
+	var f models.Field
+	buf.WriteString("fd_id,")
+	for i, sf := range *sfs {
+		f.Id = sf.NsiFieldId
+		err := api.DataStore.GetField(&f)
+		if err != nil {
+			return "", err
+		}
+		buf.WriteString(f.DbName)
+		if i < len(*sfs) {
+			buf.WriteString(",")
+		}
+	}
+	return buf.String(), nil
 }
