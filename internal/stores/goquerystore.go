@@ -249,6 +249,42 @@ func (st DbStore) GetDataset(d *models.Dataset) error {
 	return nil
 }
 
+func (st DbStore) GetSchemaFieldsById(id uuid.UUID) ([]models.SchemaField, error) {
+	var res []models.SchemaField
+	err := (*st.DS).
+		Select().
+		DataSet(&schemaFieldTable).
+		StatementKey("selectById").
+		Params(id).
+		Dest(&res).
+		Fetch()
+	if err != nil {
+		return []models.SchemaField{}, err
+	}
+	return res, nil
+}
+
+// GetField populates a Fields struct based on supplied uuid in Id field
+func (st DbStore) GetField(f *models.Field) error {
+	var res []models.Field
+	err := (*st.DS).
+		Select().
+		DataSet(&fieldTable).
+		StatementKey("selectById").
+		Params(f.DbName).
+		Dest(&res).
+		Fetch()
+	if err != nil {
+		return err
+	}
+	if len(res) == 0 {
+		f.Id = uuid.Nil
+	} else {
+		*f = res[0]
+	}
+	return nil
+}
+
 func (st DbStore) GetFieldId(f *models.Field) error {
 	var ids []uuid.UUID
 	err := (*st.DS).

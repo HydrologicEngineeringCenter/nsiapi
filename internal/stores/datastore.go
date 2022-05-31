@@ -138,6 +138,7 @@ var HexbinDatasets = map[string]string{
 	"hb500":  "hexbin_500",
 }
 
+// goquery store can integrate with the existing DbStore
 type DbStore struct {
 	Db *sqlx.DB
 	DS *goquery.DataStore

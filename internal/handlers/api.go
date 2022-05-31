@@ -139,7 +139,7 @@ func (api *ApiHandler) GetStructures(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	criteria := buildCriteria(bboxCriteria, fipsCriteria)
+	criteria := sql.BuildCriteria(bboxCriteria, fipsCriteria)
 
 	q := models.Quality{
 		Value: types.QualityReverse[urlParams["quality"]],
@@ -166,12 +166,11 @@ func (api *ApiHandler) GetStructures(c echo.Context) error {
 	}
 
 	query := "SELECT "
-	colStr, err := api.generateSqlColListFromSchemaFields(&sfs)
+	colStr, err := sql.GenerateSqlColListFromSchemaFields(api.DataStore, &sfs)
 	if err != nil {
 		return err
 	}
 	query = query + colStr + fmt.Sprintf(`%s FROM %s %s`, query+colStr, d.TableName, criteria)
-	// query = strings.ReplaceAll(fmt.Sprintf("%s %s", stores.NsiSelect, criteria), "{table_name}", d.TableName)
 	rows, err := api.DataStore.Db.Queryx(query, params...)
 	if err != nil {
 		return err
@@ -348,7 +347,7 @@ func (api *ApiHandler) GetStats(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	criteria := buildCriteria(bboxCriteria, "")
+	criteria := sql.BuildCriteria(bboxCriteria, "")
 	var nsiSummary stores.NsiSummary
 	err = api.DataStore.Db.Get(&nsiSummary, fmt.Sprintf("%s %s", stores.NsiStatsSelect, criteria))
 	if err == nil {
@@ -562,45 +561,10 @@ func rowsToGeojsonStream(c echo.Context, rows *sqlx.Rows) error {
 	return nil
 }
 
-func buildCriteria(bboxCriteria string, fipsCritiera string) string {
-	var builder strings.Builder
-	builder.WriteString("where ")
-	if bboxCriteria != "" {
-		builder.WriteString(bboxCriteria)
-	}
-	if fipsCritiera != "" {
-		if bboxCriteria != "" {
-			builder.WriteString(" and ")
-		}
-		builder.WriteString(fipsCritiera)
-	}
-	//builder.WriteString(fmt.Sprintf(" limit %s", featureLimit))
-	return builder.String()
-}
-
 func parseUrlParams(c *echo.Context, keys []string) map[string]string {
 	var params = map[string]string{}
 	for _, k := range keys {
 		params[k] = (*c).QueryParam(k)
 	}
 	return params
-}
-
-// generateSqlColFromSchemaFields generates a list of columns from a list of SchemaFields
-func (api *ApiHandler) generateSqlColListFromSchemaFields(sfs *[]models.SchemaField) (string, error) {
-	var buf strings.Builder
-	var f models.Field
-	buf.WriteString("fd_id,")
-	for i, sf := range *sfs {
-		f.Id = sf.NsiFieldId
-		err := api.DataStore.GetField(&f)
-		if err != nil {
-			return "", err
-		}
-		buf.WriteString(f.DbName)
-		if i < len(*sfs) {
-			buf.WriteString(",")
-		}
-	}
-	return buf.String(), nil
 }

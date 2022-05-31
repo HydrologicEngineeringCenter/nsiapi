@@ -102,8 +102,9 @@ var schemaFieldTable = goquery.TableDataSet{
 	Name:   "schema_field",
 	Schema: DbSchema,
 	Statements: map[string]string{
-		"selectId": `select id from schema_field where id=$1 and field_id=$2`,
-		"insert":   `insert into schema_field (id, field_id, is_private) values ($1, $2, $3) returning id`,
+		"selectId":   `select id from schema_field where id=$1 and field_id=$2`,
+		"selectById": `select * from schema_field where id=$1`,
+		"insert":     `insert into schema_field (id, field_id, is_private) values ($1, $2, $3) returning id`,
 	},
 	Fields: models.Field{},
 }

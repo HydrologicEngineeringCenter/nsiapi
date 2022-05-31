@@ -4,8 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/hydrologicengineeringcenter/nsiapi/internal/gis"
+	"github.com/hydrologicengineeringcenter/nsiapi/internal/models"
+	"github.com/hydrologicengineeringcenter/nsiapi/internal/stores"
 	"github.com/hydrologicengineeringcenter/nsiapi/internal/utils"
 	"github.com/paulmach/orb/encoding/wkt"
 	"github.com/paulmach/orb/project"
@@ -53,4 +56,39 @@ func GetBboxCriteria(bbox string, crs int) (string, error) {
 		}
 	}
 	return bboxCriteria, nil
+}
+
+func BuildCriteria(bboxCriteria string, fipsCritiera string) string {
+	var builder strings.Builder
+	builder.WriteString("where ")
+	if bboxCriteria != "" {
+		builder.WriteString(bboxCriteria)
+	}
+	if fipsCritiera != "" {
+		if bboxCriteria != "" {
+			builder.WriteString(" and ")
+		}
+		builder.WriteString(fipsCritiera)
+	}
+	//builder.WriteString(fmt.Sprintf(" limit %s", featureLimit))
+	return builder.String()
+}
+
+// generateSqlColFromSchemaFields generates a list of columns from a list of SchemaFields
+func GenerateSqlColListFromSchemaFields(s *stores.DbStore, sfs *[]models.SchemaField) (string, error) {
+	var buf strings.Builder
+	var f models.Field
+	buf.WriteString("fd_id,")
+	for i, sf := range *sfs {
+		f.Id = sf.NsiFieldId
+		err := s.GetField(&f)
+		if err != nil {
+			return "", err
+		}
+		buf.WriteString(f.DbName)
+		if i < len(*sfs) {
+			buf.WriteString(",")
+		}
+	}
+	return buf.String(), nil
 }
